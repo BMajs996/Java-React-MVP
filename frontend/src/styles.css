@@ -1,0 +1,229 @@
+:root {
+  --ink: #17211b;
+  --muted: #607166;
+  --paper: #f7f1df;
+  --court: #c65a2b;
+  --lime: #d6f36a;
+  --forest: #183d2f;
+  --line: rgba(23, 33, 27, 0.14);
+  font-family: "Aptos Display", "Trebuchet MS", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(214, 243, 106, 0.65), transparent 28rem),
+    radial-gradient(circle at 92% 12%, rgba(198, 90, 43, 0.35), transparent 24rem),
+    linear-gradient(135deg, #fbf6e8, #e9dfc8);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+a {
+  border: 0;
+  border-radius: 999px;
+  background: var(--forest);
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 800;
+  justify-content: center;
+  padding: 0.85rem 1.1rem;
+  text-decoration: none;
+}
+
+button:hover,
+a:hover {
+  transform: translateY(-1px);
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  font: inherit;
+  padding: 0.9rem 1rem;
+  width: 100%;
+}
+
+.login-shell,
+.app-shell {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 2rem;
+}
+
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.login-card,
+.hero,
+.panel,
+.notice,
+.two-factor-setup {
+  backdrop-filter: blur(18px);
+  background: rgba(255, 250, 235, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 24px 80px rgba(24, 61, 47, 0.16);
+}
+
+.login-card {
+  border-radius: 2rem;
+  max-width: 540px;
+  padding: 2.2rem;
+}
+
+.login-card form {
+  display: grid;
+  gap: 1rem;
+}
+
+label {
+  color: var(--muted);
+  display: grid;
+  font-weight: 800;
+  gap: 0.35rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 7vw, 5.9rem);
+  letter-spacing: -0.08em;
+  line-height: 0.88;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+h3 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.eyebrow {
+  color: var(--court);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.muted,
+.card p {
+  color: var(--muted);
+}
+
+.hero {
+  align-items: flex-end;
+  border-radius: 2rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr auto;
+  margin-bottom: 1.4rem;
+  padding: 2rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: flex-end;
+}
+
+.actions a:nth-child(2),
+.actions button:nth-child(3) {
+  background: var(--court);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.panel,
+.notice,
+.two-factor-setup {
+  border-radius: 1.5rem;
+  padding: 1.2rem;
+}
+
+.two-factor-setup {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr auto auto;
+  margin-bottom: 1.4rem;
+}
+
+.two-factor-setup img {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 0.75rem;
+  width: 220px;
+}
+
+.stack {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+}
+
+.card strong {
+  color: var(--court);
+}
+
+.message,
+.notice {
+  color: var(--court);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 920px) {
+  .hero,
+  .grid,
+  .two-factor-setup {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 620px) {
+  .login-shell,
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .hero,
+  .login-card {
+    padding: 1.2rem;
+  }
+}
