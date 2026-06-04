@@ -33,8 +33,12 @@ public class TotpService {
         }
         long step = System.currentTimeMillis() / 1000 / TIME_STEP_SECONDS;
         for (long offset = -1; offset <= 1; offset++) {
-            if (code.equals(generate(secret, step + offset))) {
-                return true;
+            try {
+                if (code.equals(generate(secret, step + offset))) {
+                    return true;
+                }
+            } catch (IllegalArgumentException e) {
+                return false;
             }
         }
         return false;
