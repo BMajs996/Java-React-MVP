@@ -1,12 +1,15 @@
 package com.example.vezba.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -36,12 +39,12 @@ public class AppUser {
     private boolean banned;
     private boolean twoFactorEnabled;
     private String twoFactorSecret;
-    private String phone;
-    private String city;
-    private String avatarUrl;
 
-    @Column(length = 1000)
-    private String bio;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private PlayerProfile playerProfile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private ClubProfile clubProfile;
 
     protected AppUser() {
     }
@@ -52,6 +55,7 @@ public class AppUser {
         this.passwordHash = passwordHash;
         this.accountType = accountType;
         this.role = role;
+        ensureProfileForAccountType();
     }
 
     public Long getId() {
@@ -88,6 +92,7 @@ public class AppUser {
 
     public void setAccountType(AccountType accountType) {
         this.accountType = accountType;
+        ensureProfileForAccountType();
     }
 
     public UserRole getRole() {
@@ -123,34 +128,94 @@ public class AppUser {
     }
 
     public String getPhone() {
-        return phone;
+        ProfileDetails profile = publicProfile();
+        return profile == null ? null : profile.getPhone();
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        ProfileDetails profile = ensurePublicProfile();
+        if (profile != null) {
+            profile.setPhone(phone);
+        }
     }
 
     public String getCity() {
-        return city;
+        ProfileDetails profile = publicProfile();
+        return profile == null ? null : profile.getCity();
     }
 
     public void setCity(String city) {
-        this.city = city;
+        ProfileDetails profile = ensurePublicProfile();
+        if (profile != null) {
+            profile.setCity(city);
+        }
     }
 
     public String getAvatarUrl() {
-        return avatarUrl;
+        ProfileDetails profile = publicProfile();
+        return profile == null ? null : profile.getAvatarUrl();
     }
 
     public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
+        ProfileDetails profile = ensurePublicProfile();
+        if (profile != null) {
+            profile.setAvatarUrl(avatarUrl);
+        }
     }
 
     public String getBio() {
-        return bio;
+        ProfileDetails profile = publicProfile();
+        return profile == null ? null : profile.getBio();
     }
 
     public void setBio(String bio) {
-        this.bio = bio;
+        ProfileDetails profile = ensurePublicProfile();
+        if (profile != null) {
+            profile.setBio(bio);
+        }
+    }
+
+    public PlayerProfile getPlayerProfile() {
+        return playerProfile;
+    }
+
+    public void setPlayerProfile(PlayerProfile playerProfile) {
+        this.playerProfile = playerProfile;
+        if (playerProfile != null && playerProfile.getUser() != this) {
+            playerProfile.setUser(this);
+        }
+    }
+
+    public ClubProfile getClubProfile() {
+        return clubProfile;
+    }
+
+    public void setClubProfile(ClubProfile clubProfile) {
+        this.clubProfile = clubProfile;
+        if (clubProfile != null && clubProfile.getUser() != this) {
+            clubProfile.setUser(this);
+        }
+    }
+
+    private ProfileDetails publicProfile() {
+        return switch (accountType) {
+            case PLAYER -> playerProfile;
+            case CLUB -> clubProfile;
+            case ADMIN -> null;
+        };
+    }
+
+    private ProfileDetails ensurePublicProfile() {
+        ensureProfileForAccountType();
+        return publicProfile();
+    }
+
+    private void ensureProfileForAccountType() {
+        if (accountType == AccountType.PLAYER && playerProfile == null) {
+            playerProfile = new PlayerProfile(this);
+        }
+        if (accountType == AccountType.CLUB && clubProfile == null) {
+            clubProfile = new ClubProfile(this);
+        }
     }
 }

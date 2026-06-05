@@ -45,8 +45,8 @@ public class DataSeeder {
             club.setBio("Klub sa tri rekreativna terena i vecernjim terminima.");
             users.save(club);
 
-            Court clay = courts.save(new Court("Teren 1", "Bulevar sporta 12", "Sljaka", club));
-            Court hard = courts.save(new Court("Teren 2", "Bulevar sporta 12", "Beton", club));
+            Court clay = courts.save(new Court("Teren 1", "Bulevar sporta 12", "Sljaka", club.getClubProfile()));
+            Court hard = courts.save(new Court("Teren 2", "Bulevar sporta 12", "Beton", club.getClubProfile()));
 
             GameMatch played = new GameMatch("Ana vs Milos", LocalDateTime.now().minusDays(2).withHour(18).withMinute(0), ana, milos, ana, clay);
             played.setStatus(MatchStatus.PLAYED);

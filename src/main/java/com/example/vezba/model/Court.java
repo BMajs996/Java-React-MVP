@@ -18,12 +18,12 @@ public class Court {
     private boolean active = true;
 
     @ManyToOne
-    private AppUser club;
+    private ClubProfile club;
 
     protected Court() {
     }
 
-    public Court(String name, String location, String surface, AppUser club) {
+    public Court(String name, String location, String surface, ClubProfile club) {
         this.name = name;
         this.location = location;
         this.surface = surface;
@@ -66,11 +66,11 @@ public class Court {
         this.active = active;
     }
 
-    public AppUser getClub() {
+    public ClubProfile getClub() {
         return club;
     }
 
-    public void setClub(AppUser club) {
+    public void setClub(ClubProfile club) {
         this.club = club;
     }
 }

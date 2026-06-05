@@ -2,6 +2,7 @@ package com.example.vezba.web;
 
 import com.example.vezba.auth.AuthService;
 import com.example.vezba.model.AppUser;
+import com.example.vezba.model.ClubProfile;
 import com.example.vezba.model.Court;
 import com.example.vezba.model.Reservation;
 import com.example.vezba.repository.CourtRepository;
@@ -39,7 +40,11 @@ public class CourtController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiDtos.CourtDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody CourtRequest request) {
-        AppUser club = authService.requireUser(token);
+        AppUser user = authService.requireUser(token);
+        ClubProfile club = user.getClubProfile();
+        if (club == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only club accounts can create courts");
+        }
         return ApiDtos.CourtDto.from(courts.save(new Court(request.name(), request.location(), request.surface(), club)));
     }
 

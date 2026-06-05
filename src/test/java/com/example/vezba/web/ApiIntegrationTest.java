@@ -57,6 +57,70 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void profileUpdatePersistsPublicProfileFields() throws Exception {
+        String token = login("club@demo.rs", "password");
+
+        TestResponse updated = send("PATCH", "/api/profile", json(
+            "displayName", "TK Test",
+            "phone", "+38164111222",
+            "city", "Novi Sad",
+            "avatarUrl", "https://example.com/avatar.png",
+            "bio", "Updated club profile"
+        ), Map.of("X-Auth-Token", token));
+        TestResponse me = send("GET", "/api/auth/me", null, Map.of("X-Auth-Token", token));
+
+        assertEquals(200, updated.statusCode());
+        assertTrue(me.body().contains("\"displayName\":\"TK Test\""));
+        assertTrue(me.body().contains("\"phone\":\"+38164111222\""));
+        assertTrue(me.body().contains("\"city\":\"Novi Sad\""));
+        assertTrue(me.body().contains("\"avatarUrl\":\"https://example.com/avatar.png\""));
+        assertTrue(me.body().contains("\"bio\":\"Updated club profile\""));
+    }
+
+    @Test
+    void onlyClubAccountsCanCreateCourts() throws Exception {
+        String clubToken = login("club@demo.rs", "password");
+        String playerToken = login("ana@demo.rs", "password");
+
+        TestResponse created = send("POST", "/api/courts", json(
+            "name", "Integration Court",
+            "location", "Novi Sad",
+            "surface", "Hard"
+        ), Map.of("X-Auth-Token", clubToken));
+        TestResponse forbidden = send("POST", "/api/courts", json(
+            "name", "Player Court",
+            "location", "Novi Sad",
+            "surface", "Hard"
+        ), Map.of("X-Auth-Token", playerToken));
+
+        assertEquals(201, created.statusCode());
+        assertTrue(created.body().contains("\"club\""));
+        assertTrue(created.body().contains("\"email\":\"club@demo.rs\""));
+        assertEquals(403, forbidden.statusCode());
+    }
+
+    @Test
+    void adminProfileUpdateDoesNotCreatePublicProfileFields() throws Exception {
+        String token = login("admin@demo.rs", "password");
+
+        TestResponse updated = send("PATCH", "/api/profile", json(
+            "displayName", "Admin Updated",
+            "phone", "+38164111222",
+            "city", "Beograd",
+            "avatarUrl", "https://example.com/admin.png",
+            "bio", "Admin should not have public profile"
+        ), Map.of("X-Auth-Token", token));
+        TestResponse me = send("GET", "/api/auth/me", null, Map.of("X-Auth-Token", token));
+
+        assertEquals(200, updated.statusCode());
+        assertTrue(me.body().contains("\"displayName\":\"Admin Updated\""));
+        assertTrue(me.body().contains("\"phone\":null"));
+        assertTrue(me.body().contains("\"city\":null"));
+        assertTrue(me.body().contains("\"avatarUrl\":null"));
+        assertTrue(me.body().contains("\"bio\":null"));
+    }
+
+    @Test
     void overlappingCourtReservationIsRejected() throws Exception {
         String token = login("ana@demo.rs", "password");
         long courtId = firstId(send("GET", "/api/courts", null, Map.of()).body());

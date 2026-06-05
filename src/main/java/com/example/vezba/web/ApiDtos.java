@@ -28,7 +28,7 @@ public final class ApiDtos {
     public record CourtDto(Long id, String name, String location, String surface, boolean active, UserDto club) {
         public static CourtDto from(Court court) {
             return new CourtDto(court.getId(), court.getName(), court.getLocation(), court.getSurface(), court.isActive(),
-                court.getClub() == null ? null : UserDto.from(court.getClub()));
+                court.getClub() == null ? null : UserDto.from(court.getClub().getUser()));
         }
     }
 
