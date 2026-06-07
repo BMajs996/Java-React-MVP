@@ -43,9 +43,11 @@ a:hover {
   transform: translateY(-1px);
 }
 
-input {
+input,
+select {
   border: 1px solid var(--line);
   border-radius: 1rem;
+  background: white;
   font: inherit;
   padding: 0.9rem 1rem;
   width: 100%;
@@ -68,7 +70,8 @@ input {
 .hero,
 .panel,
 .notice,
-.two-factor-setup {
+.two-factor-setup,
+.form-band {
   backdrop-filter: blur(18px);
   background: rgba(255, 250, 235, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.55);
@@ -159,7 +162,8 @@ h3 {
 
 .panel,
 .notice,
-.two-factor-setup {
+.two-factor-setup,
+.form-band {
   border-radius: 1.5rem;
   padding: 1.2rem;
 }
@@ -178,6 +182,27 @@ h3 {
   border-radius: 1rem;
   padding: 0.75rem;
   width: 220px;
+}
+
+.form-band {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.match-form,
+.player-form {
+  display: grid;
+  gap: 0.9rem;
+  align-items: end;
+}
+
+.match-form {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+}
+
+.player-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
 }
 
 .stack {
@@ -207,7 +232,9 @@ h3 {
 @media (max-width: 920px) {
   .hero,
   .grid,
-  .two-factor-setup {
+  .two-factor-setup,
+  .match-form,
+  .player-form {
     grid-template-columns: 1fr;
   }
 

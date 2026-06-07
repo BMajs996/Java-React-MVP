@@ -1,6 +1,7 @@
 package com.example.vezba.web;
 
 import com.example.vezba.auth.AuthService;
+import com.example.vezba.model.AccountType;
 import com.example.vezba.model.AppUser;
 import com.example.vezba.model.Court;
 import com.example.vezba.model.GameMatch;
@@ -63,8 +64,14 @@ public class MatchController {
     public ApiDtos.MatchDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody CreateMatchRequest request) {
         AppUser organizer = authService.requireUser(token);
         Court court = courts.findById(request.courtId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Court not found"));
-        AppUser playerA = request.playerAId() == null ? organizer : user(request.playerAId());
-        AppUser playerB = request.playerBId() == null ? null : user(request.playerBId());
+        AppUser playerA = request.playerAId() == null ? organizer : player(request.playerAId());
+        AppUser playerB = request.playerBId() == null ? null : player(request.playerBId());
+        if (playerA.getAccountType() != AccountType.PLAYER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Player A must be a player account");
+        }
+        if (playerB != null && playerA.getId().equals(playerB.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Players must be different");
+        }
         GameMatch match = matches.save(new GameMatch(request.title(), request.startTime(), playerA, playerB, organizer, court));
         if (playerB != null) {
             notifications.save(new Notification(playerB, "Zakazan je mec: " + match.getTitle()));
@@ -86,6 +93,14 @@ public class MatchController {
 
     private AppUser user(Long id) {
         return users.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    private AppUser player(Long id) {
+        AppUser user = user(id);
+        if (user.getAccountType() != AccountType.PLAYER || user.isBanned()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User must be an active player");
+        }
+        return user;
     }
 
     public record CreateMatchRequest(String title, LocalDateTime startTime, Long playerAId, Long playerBId, Long courtId) {

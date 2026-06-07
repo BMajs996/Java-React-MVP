@@ -25,6 +25,12 @@ public final class ApiDtos {
         }
     }
 
+    public record PlayerDto(Long id, String displayName, String city, String avatarUrl) {
+        public static PlayerDto from(AppUser user) {
+            return new PlayerDto(user.getId(), user.getDisplayName(), user.getCity(), user.getAvatarUrl());
+        }
+    }
+
     public record CourtDto(Long id, String name, String location, String surface, boolean active, UserDto club) {
         public static CourtDto from(Court court) {
             return new CourtDto(court.getId(), court.getName(), court.getLocation(), court.getSurface(), court.isActive(),

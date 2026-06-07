@@ -10,7 +10,9 @@ function App() {
   const [me, setMe] = useState(null);
   const [challengeId, setChallengeId] = useState('');
   const [login, setLogin] = useState({ email: 'admin@demo.rs', password: 'password', code: '' });
-  const [dashboard, setDashboard] = useState({ matches: [], courts: [], reservations: [], rankings: [], tournaments: [], notifications: [] });
+  const [dashboard, setDashboard] = useState({ matches: [], courts: [], reservations: [], rankings: [], tournaments: [], notifications: [], players: [] });
+  const [matchForm, setMatchForm] = useState({ title: '', startTime: '', playerAId: '', playerBId: '', courtId: '' });
+  const [playerForm, setPlayerForm] = useState({ displayName: '', email: '', password: 'password' });
   const [message, setMessage] = useState('');
   const [twoFactorQr, setTwoFactorQr] = useState('');
   const headers = token ? { 'X-Auth-Token': token } : {};
@@ -39,18 +41,25 @@ function App() {
 
   async function loadDashboard() {
     try {
-      const [profile, matches, courts, reservations, rankings, tournaments, notifications] = await Promise.all([
+      const [profile, matches, courts, reservations, rankings, tournaments, notifications, players] = await Promise.all([
         request('/auth/me'),
         request('/matches'),
         request('/courts'),
         request('/courts/reservations'),
         request('/rankings'),
         request('/tournaments'),
-        request('/profile/notifications')
+        request('/profile/notifications'),
+        request('/players')
       ]);
       startTransition(() => {
         setMe(profile);
-        setDashboard({ matches, courts, reservations, rankings, tournaments, notifications });
+        setDashboard({ matches, courts, reservations, rankings, tournaments, notifications, players });
+        setMatchForm((current) => ({
+          ...current,
+          playerAId: current.playerAId || String(profile.accountType === 'PLAYER' ? profile.id : players[0]?.id || ''),
+          playerBId: current.playerBId || String(players.find((player) => player.id !== profile.id)?.id || ''),
+          courtId: current.courtId || String(courts[0]?.id || '')
+        }));
       });
     } catch (error) {
       setMessage(error.message);
@@ -93,6 +102,53 @@ function App() {
       const qr = await QRCode.toDataURL(setup.provisioningUri, { margin: 1, width: 220 });
       setTwoFactorQr(qr);
       setMessage('2FA je aktiviran. Skeniraj QR kod u authenticator aplikaciji pre odjave.');
+      loadDashboard();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function createMatch(event) {
+    event.preventDefault();
+    setMessage('');
+    try {
+      await request('/matches', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: matchForm.title,
+          startTime: matchForm.startTime,
+          playerAId: Number(matchForm.playerAId),
+          playerBId: matchForm.playerBId ? Number(matchForm.playerBId) : null,
+          courtId: Number(matchForm.courtId)
+        })
+      });
+      setMatchForm({ title: '', startTime: '', playerAId: matchForm.playerAId, playerBId: matchForm.playerBId, courtId: matchForm.courtId });
+      setMessage('Mec je dodat.');
+      loadDashboard();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function createPlayer(event) {
+    event.preventDefault();
+    setMessage('');
+    try {
+      const player = await request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: playerForm.email,
+          displayName: playerForm.displayName,
+          password: playerForm.password,
+          accountType: 'PLAYER'
+        })
+      });
+      setPlayerForm({ displayName: '', email: '', password: 'password' });
+      setMatchForm((current) => ({
+        ...current,
+        playerBId: current.playerBId || String(player.id)
+      }));
+      setMessage('Igrac je dodat i dostupan je za izbor u mecu.');
       loadDashboard();
     } catch (error) {
       setMessage(error.message);
@@ -166,6 +222,101 @@ function App() {
           <button onClick={() => setTwoFactorQr('')}>Zatvori</button>
         </section>
       )}
+
+      <section className="form-band">
+        <div>
+          <p className="eyebrow">Novi igrac</p>
+          <h2>Dodaj ucesnika</h2>
+        </div>
+        <form className="player-form" onSubmit={createPlayer}>
+          <label>
+            Ime
+            <input
+              required
+              value={playerForm.displayName}
+              onChange={(event) => setPlayerForm({ ...playerForm, displayName: event.target.value })}
+              placeholder="Petar Petrovic"
+            />
+          </label>
+          <label>
+            Email
+            <input
+              required
+              type="email"
+              value={playerForm.email}
+              onChange={(event) => setPlayerForm({ ...playerForm, email: event.target.value })}
+              placeholder="petar@demo.rs"
+            />
+          </label>
+          <label>
+            Lozinka
+            <input
+              required
+              type="password"
+              value={playerForm.password}
+              onChange={(event) => setPlayerForm({ ...playerForm, password: event.target.value })}
+            />
+          </label>
+          <button>Dodaj igraca</button>
+        </form>
+      </section>
+
+      <section className="form-band">
+        <div>
+          <p className="eyebrow">Novi mec</p>
+          <h2>Dodaj mec i izaberi ucesnike</h2>
+        </div>
+        <form className="match-form" onSubmit={createMatch}>
+          <label>
+            Naziv
+            <input
+              required
+              value={matchForm.title}
+              onChange={(event) => setMatchForm({ ...matchForm, title: event.target.value })}
+              placeholder="Ana vs Milos"
+            />
+          </label>
+          <label>
+            Termin
+            <input
+              required
+              type="datetime-local"
+              value={matchForm.startTime}
+              onChange={(event) => setMatchForm({ ...matchForm, startTime: event.target.value })}
+            />
+          </label>
+          <label>
+            Igrac A
+            <select required value={matchForm.playerAId} onChange={(event) => setMatchForm({ ...matchForm, playerAId: event.target.value })}>
+              <option value="">Izaberi igraca</option>
+              {dashboard.players.map((player) => (
+                <option key={player.id} value={player.id}>{player.displayName}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Igrac B
+            <select value={matchForm.playerBId} onChange={(event) => setMatchForm({ ...matchForm, playerBId: event.target.value })}>
+              <option value="">Otvoren mec</option>
+              {dashboard.players
+                .filter((player) => String(player.id) !== matchForm.playerAId)
+                .map((player) => (
+                  <option key={player.id} value={player.id}>{player.displayName}</option>
+                ))}
+            </select>
+          </label>
+          <label>
+            Teren
+            <select required value={matchForm.courtId} onChange={(event) => setMatchForm({ ...matchForm, courtId: event.target.value })}>
+              <option value="">Izaberi teren</option>
+              {dashboard.courts.map((court) => (
+                <option key={court.id} value={court.id}>{court.name} · {court.location}</option>
+              ))}
+            </select>
+          </label>
+          <button>Dodaj mec</button>
+        </form>
+      </section>
 
       <section className="grid">
         <Panel title="Mecevi" kicker="prethodni, danasnji, predstojeci">

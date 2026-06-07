@@ -158,6 +158,32 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void matchCreationRejectsInvalidParticipants() throws Exception {
+        String token = login("ana@demo.rs", "password");
+        long playerId = extractLong(send("GET", "/api/auth/me", null, Map.of("X-Auth-Token", token)).body(), "\"id\":(\\d+)");
+        long courtId = firstId(send("GET", "/api/courts", null, Map.of()).body());
+        long clubId = extractLong(send("GET", "/api/courts", null, Map.of()).body(), "\"club\":\\{\"id\":(\\d+)");
+
+        TestResponse samePlayers = send("POST", "/api/matches", json(
+            "title", "Invalid same players",
+            "startTime", "2031-03-01T18:00:00",
+            "playerAId", playerId,
+            "playerBId", playerId,
+            "courtId", courtId
+        ), Map.of("X-Auth-Token", token));
+        TestResponse clubAsPlayer = send("POST", "/api/matches", json(
+            "title", "Invalid club player",
+            "startTime", "2031-03-01T19:00:00",
+            "playerAId", clubId,
+            "playerBId", playerId,
+            "courtId", courtId
+        ), Map.of("X-Auth-Token", token));
+
+        assertEquals(400, samePlayers.statusCode());
+        assertEquals(400, clubAsPlayer.statusCode());
+    }
+
+    @Test
     void adminCanBanUserAndRegularUserCannotReadAdminList() throws Exception {
         String adminToken = login("admin@demo.rs", "password");
         String regularToken = login("ana@demo.rs", "password");
@@ -175,6 +201,23 @@ class ApiIntegrationTest {
         assertEquals(200, banned.statusCode());
         assertTrue(banned.body().contains("\"banned\":true"));
         assertEquals(401, bannedLogin.statusCode());
+    }
+
+    @Test
+    void playersEndpointReturnsActivePlayersOnly() throws Exception {
+        String adminToken = login("admin@demo.rs", "password");
+        long hiddenPlayerId = register("hidden-player-" + System.nanoTime() + "@demo.rs", "Hidden Player", "password", "PLAYER");
+        send("PATCH", "/api/admin/users/" + hiddenPlayerId + "/ban", "", Map.of("X-Auth-Token", adminToken));
+
+        TestResponse players = send("GET", "/api/players", null, Map.of());
+
+        assertEquals(200, players.statusCode());
+        assertTrue(players.body().contains("\"displayName\":\"Ana Markovic\""));
+        assertTrue(players.body().contains("\"displayName\":\"Milos Petrovic\""));
+        assertFalse(players.body().contains("Hidden Player"));
+        assertFalse(players.body().contains("TK Centar"));
+        assertFalse(players.body().contains("\"email\""));
+        assertFalse(players.body().contains("twoFactorEnabled"));
     }
 
     @Test
