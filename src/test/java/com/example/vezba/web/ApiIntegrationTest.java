@@ -184,6 +184,137 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void matchScoreSubmissionRequiresParticipantOrganizerOrAdmin() throws Exception {
+        String organizerToken = login("ana@demo.rs", "password");
+        String outsiderEmail = "score-outsider-" + System.nanoTime() + "@demo.rs";
+        register(outsiderEmail, "Score Outsider", "password", "PLAYER");
+        String outsiderToken = login(outsiderEmail, "password");
+        long organizerId = extractLong(send("GET", "/api/auth/me", null, Map.of("X-Auth-Token", organizerToken)).body(), "\"id\":(\\d+)");
+        long courtId = firstId(send("GET", "/api/courts", null, Map.of()).body());
+
+        TestResponse created = send("POST", "/api/matches", json(
+            "title", "Unauthorized score match",
+            "startTime", "2031-04-01T18:00:00",
+            "courtId", courtId
+        ), Map.of("X-Auth-Token", organizerToken));
+        long matchId = extractLong(created.body(), "\"id\":(\\d+)");
+
+        TestResponse forbidden = send("PATCH", "/api/matches/" + matchId + "/score", json(
+            "score", "6:4 6:4",
+            "winnerId", organizerId
+        ), Map.of("X-Auth-Token", outsiderToken));
+
+        assertEquals(201, created.statusCode());
+        assertEquals(403, forbidden.statusCode());
+    }
+
+    @Test
+    void matchScoreSubmissionRejectsWinnerOutsideMatchParticipants() throws Exception {
+        String organizerToken = login("ana@demo.rs", "password");
+        long outsiderId = register("score-winner-" + System.nanoTime() + "@demo.rs", "Score Winner", "password", "PLAYER");
+        long courtId = firstId(send("GET", "/api/courts", null, Map.of()).body());
+
+        TestResponse created = send("POST", "/api/matches", json(
+            "title", "Invalid winner match",
+            "startTime", "2031-04-02T18:00:00",
+            "courtId", courtId
+        ), Map.of("X-Auth-Token", organizerToken));
+        long matchId = extractLong(created.body(), "\"id\":(\\d+)");
+
+        TestResponse rejected = send("PATCH", "/api/matches/" + matchId + "/score", json(
+            "score", "6:4 6:4",
+            "winnerId", outsiderId
+        ), Map.of("X-Auth-Token", organizerToken));
+
+        assertEquals(201, created.statusCode());
+        assertEquals(400, rejected.statusCode());
+    }
+
+    @Test
+    void favoriteEndpointRejectsSelfTypeMismatchAndDuplicate() throws Exception {
+        String token = login("ana@demo.rs", "password");
+        long playerId = extractLong(send("GET", "/api/auth/me", null, Map.of("X-Auth-Token", token)).body(), "\"id\":(\\d+)");
+        long clubId = extractLong(send("GET", "/api/courts", null, Map.of()).body(), "\"club\":\\{\"id\":(\\d+)");
+
+        TestResponse self = send("POST", "/api/profile/favorites", json(
+            "targetId", playerId,
+            "type", "PLAYER"
+        ), Map.of("X-Auth-Token", token));
+        TestResponse wrongType = send("POST", "/api/profile/favorites", json(
+            "targetId", clubId,
+            "type", "PLAYER"
+        ), Map.of("X-Auth-Token", token));
+        TestResponse duplicate = send("POST", "/api/profile/favorites", json(
+            "targetId", clubId,
+            "type", "CLUB"
+        ), Map.of("X-Auth-Token", token));
+
+        assertEquals(400, self.statusCode());
+        assertEquals(400, wrongType.statusCode());
+        assertEquals(409, duplicate.statusCode());
+    }
+
+    @Test
+    void notificationCanBeMarkedAsReadByRecipientOnly() throws Exception {
+        String organizerToken = login("ana@demo.rs", "password");
+        String recipientEmail = "notification-reader-" + System.nanoTime() + "@demo.rs";
+        long recipientId = register(recipientEmail, "Notification Reader", "password", "PLAYER");
+        String recipientToken = login(recipientEmail, "password");
+        long courtId = firstId(send("GET", "/api/courts", null, Map.of()).body());
+
+        TestResponse created = send("POST", "/api/matches", json(
+            "title", "Notification match",
+            "startTime", "2031-05-01T18:00:00",
+            "playerBId", recipientId,
+            "courtId", courtId
+        ), Map.of("X-Auth-Token", organizerToken));
+        TestResponse notifications = send("GET", "/api/profile/notifications", null, Map.of("X-Auth-Token", recipientToken));
+        long notificationId = firstId(notifications.body());
+
+        TestResponse marked = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "", Map.of("X-Auth-Token", recipientToken));
+        TestResponse forbidden = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "", Map.of("X-Auth-Token", organizerToken));
+
+        assertEquals(201, created.statusCode());
+        assertEquals(200, notifications.statusCode());
+        assertTrue(notifications.body().contains("\"read\":false"));
+        assertEquals(200, marked.statusCode());
+        assertTrue(marked.body().contains("\"read\":true"));
+        assertEquals(403, forbidden.statusCode());
+    }
+
+    @Test
+    void tournamentEndpointAppliesOrganizerAndDateRules() throws Exception {
+        String playerToken = login("ana@demo.rs", "password");
+        String clubToken = login("club@demo.rs", "password");
+
+        TestResponse playerForbidden = send("POST", "/api/tournaments", json(
+            "name", "Player Cup",
+            "city", "Beograd",
+            "maxPlayers", 16,
+            "startsOn", "2031-06-01",
+            "endsOn", "2031-06-02"
+        ), Map.of("X-Auth-Token", playerToken));
+        TestResponse invalidMaxPlayers = send("POST", "/api/tournaments", json(
+            "name", "Invalid Cup",
+            "city", "Beograd",
+            "maxPlayers", 0,
+            "startsOn", "2031-06-01",
+            "endsOn", "2031-06-02"
+        ), Map.of("X-Auth-Token", clubToken));
+        TestResponse pastDate = send("POST", "/api/tournaments", json(
+            "name", "Past Cup",
+            "city", "Beograd",
+            "maxPlayers", 16,
+            "startsOn", "2020-06-01",
+            "endsOn", "2020-06-02"
+        ), Map.of("X-Auth-Token", clubToken));
+
+        assertEquals(403, playerForbidden.statusCode());
+        assertEquals(400, invalidMaxPlayers.statusCode());
+        assertEquals(400, pastDate.statusCode());
+    }
+
+    @Test
     void adminCanBanUserAndRegularUserCannotReadAdminList() throws Exception {
         String adminToken = login("admin@demo.rs", "password");
         String regularToken = login("ana@demo.rs", "password");

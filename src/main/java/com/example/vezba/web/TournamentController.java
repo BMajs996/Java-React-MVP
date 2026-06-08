@@ -2,8 +2,7 @@ package com.example.vezba.web;
 
 import com.example.vezba.auth.AuthService;
 import com.example.vezba.model.AppUser;
-import com.example.vezba.model.Tournament;
-import com.example.vezba.repository.TournamentRepository;
+import com.example.vezba.service.TournamentService;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -18,25 +17,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/tournaments")
 public class TournamentController {
-    private final TournamentRepository tournaments;
     private final AuthService authService;
+    private final TournamentService tournamentService;
 
-    public TournamentController(TournamentRepository tournaments, AuthService authService) {
-        this.tournaments = tournaments;
+    public TournamentController(AuthService authService, TournamentService tournamentService) {
         this.authService = authService;
+        this.tournamentService = tournamentService;
     }
 
     @GetMapping
     public List<ApiDtos.TournamentDto> list() {
-        return tournaments.findAllByOrderByStartsOnAsc().stream().map(ApiDtos.TournamentDto::from).toList();
+        return tournamentService.list().stream().map(ApiDtos.TournamentDto::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiDtos.TournamentDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody TournamentRequest request) {
         AppUser organizer = authService.requireUser(token);
-        return ApiDtos.TournamentDto.from(tournaments.save(new Tournament(request.name(), request.city(), request.maxPlayers(),
-            request.startsOn(), request.endsOn(), organizer)));
+        return ApiDtos.TournamentDto.from(tournamentService.create(organizer, request.name(), request.city(), request.maxPlayers(),
+            request.startsOn(), request.endsOn()));
     }
 
     public record TournamentRequest(String name, String city, int maxPlayers, LocalDate startsOn, LocalDate endsOn) {
