@@ -3,6 +3,10 @@ package com.example.vezba.web;
 import com.example.vezba.auth.AuthService;
 import com.example.vezba.model.AppUser;
 import com.example.vezba.service.TournamentService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -32,12 +36,13 @@ public class TournamentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.TournamentDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody TournamentRequest request) {
+    public ApiDtos.TournamentDto create(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody TournamentRequest request) {
         AppUser organizer = authService.requireUser(token);
         return ApiDtos.TournamentDto.from(tournamentService.create(organizer, request.name(), request.city(), request.maxPlayers(),
             request.startsOn(), request.endsOn()));
     }
 
-    public record TournamentRequest(String name, String city, int maxPlayers, LocalDate startsOn, LocalDate endsOn) {
+    public record TournamentRequest(@NotBlank String name, @NotBlank String city, @Positive int maxPlayers, @NotNull LocalDate startsOn,
+                                    @NotNull LocalDate endsOn) {
     }
 }

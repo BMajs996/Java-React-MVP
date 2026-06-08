@@ -3,6 +3,9 @@ package com.example.vezba.web;
 import com.example.vezba.auth.AuthService;
 import com.example.vezba.model.AppUser;
 import com.example.vezba.service.MatchService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,21 +41,23 @@ public class MatchController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.MatchDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody CreateMatchRequest request) {
+    public ApiDtos.MatchDto create(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody CreateMatchRequest request) {
         AppUser organizer = authService.requireUser(token);
         return ApiDtos.MatchDto.from(matchService.create(organizer, request.title(), request.startTime(), request.playerAId(),
             request.playerBId(), request.courtId()));
     }
 
     @PatchMapping("/{id}/score")
-    public ApiDtos.MatchDto submitScore(@RequestHeader("X-Auth-Token") String token, @PathVariable Long id, @RequestBody ScoreRequest request) {
+    public ApiDtos.MatchDto submitScore(@RequestHeader("X-Auth-Token") String token, @PathVariable Long id,
+                                        @Valid @RequestBody ScoreRequest request) {
         AppUser submittedBy = authService.requireUser(token);
         return ApiDtos.MatchDto.from(matchService.submitScore(submittedBy, id, request.score(), request.winnerId()));
     }
 
-    public record CreateMatchRequest(String title, LocalDateTime startTime, Long playerAId, Long playerBId, Long courtId) {
+    public record CreateMatchRequest(@NotBlank String title, @NotNull LocalDateTime startTime, Long playerAId, Long playerBId,
+                                     @NotNull Long courtId) {
     }
 
-    public record ScoreRequest(String score, Long winnerId) {
+    public record ScoreRequest(@NotBlank String score, @NotNull Long winnerId) {
     }
 }

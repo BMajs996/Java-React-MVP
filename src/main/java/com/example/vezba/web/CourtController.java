@@ -4,6 +4,9 @@ import com.example.vezba.auth.AuthService;
 import com.example.vezba.model.AppUser;
 import com.example.vezba.service.CourtService;
 import com.example.vezba.service.ReservationService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -35,7 +38,7 @@ public class CourtController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.CourtDto create(@RequestHeader("X-Auth-Token") String token, @RequestBody CourtRequest request) {
+    public ApiDtos.CourtDto create(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody CourtRequest request) {
         AppUser user = authService.requireUser(token);
         return ApiDtos.CourtDto.from(courtService.create(user, request.name(), request.location(), request.surface()));
     }
@@ -47,14 +50,14 @@ public class CourtController {
 
     @PostMapping("/reservations")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.ReservationDto reserve(@RequestHeader("X-Auth-Token") String token, @RequestBody ReservationRequest request) {
+    public ApiDtos.ReservationDto reserve(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody ReservationRequest request) {
         AppUser user = authService.requireUser(token);
         return ApiDtos.ReservationDto.from(reservationService.reserve(user, request.courtId(), request.startsAt(), request.endsAt()));
     }
 
-    public record CourtRequest(String name, String location, String surface) {
+    public record CourtRequest(@NotBlank String name, @NotBlank String location, @NotBlank String surface) {
     }
 
-    public record ReservationRequest(Long courtId, LocalDateTime startsAt, LocalDateTime endsAt) {
+    public record ReservationRequest(@NotNull Long courtId, @NotNull LocalDateTime startsAt, @NotNull LocalDateTime endsAt) {
     }
 }

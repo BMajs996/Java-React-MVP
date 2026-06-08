@@ -7,6 +7,9 @@ import com.example.vezba.service.FavoriteService;
 import com.example.vezba.service.NotificationService;
 import com.example.vezba.service.PhotoService;
 import com.example.vezba.service.ProfileService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +41,7 @@ public class ProfileController {
     }
 
     @PatchMapping
-    public ApiDtos.UserDto update(@RequestHeader("X-Auth-Token") String token, @RequestBody ProfileRequest request) {
+    public ApiDtos.UserDto update(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody ProfileRequest request) {
         AppUser user = authService.requireUser(token);
         return ApiDtos.UserDto.from(profileService.update(user, request.displayName(), request.phone(), request.city(),
             request.avatarUrl(), request.bio()));
@@ -52,7 +55,7 @@ public class ProfileController {
 
     @PostMapping("/favorites")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.UserDto addFavorite(@RequestHeader("X-Auth-Token") String token, @RequestBody FavoriteRequest request) {
+    public ApiDtos.UserDto addFavorite(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody FavoriteRequest request) {
         AppUser owner = authService.requireUser(token);
         return ApiDtos.UserDto.from(favoriteService.add(owner, request.targetId(), request.type()));
     }
@@ -77,17 +80,17 @@ public class ProfileController {
 
     @PostMapping("/photos")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiDtos.PhotoDto addPhoto(@RequestHeader("X-Auth-Token") String token, @RequestBody PhotoRequest request) {
+    public ApiDtos.PhotoDto addPhoto(@RequestHeader("X-Auth-Token") String token, @Valid @RequestBody PhotoRequest request) {
         AppUser user = authService.requireUser(token);
         return ApiDtos.PhotoDto.from(photoService.add(user, request.url(), request.caption()));
     }
 
-    public record ProfileRequest(String displayName, String phone, String city, String avatarUrl, String bio) {
+    public record ProfileRequest(@NotBlank String displayName, String phone, String city, String avatarUrl, String bio) {
     }
 
-    public record FavoriteRequest(Long targetId, FavoriteType type) {
+    public record FavoriteRequest(@NotNull Long targetId, @NotNull FavoriteType type) {
     }
 
-    public record PhotoRequest(String url, String caption) {
+    public record PhotoRequest(@NotBlank String url, String caption) {
     }
 }

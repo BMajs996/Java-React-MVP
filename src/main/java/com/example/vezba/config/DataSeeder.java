@@ -37,10 +37,14 @@ public class DataSeeder {
                 return;
             }
 
-            AppUser admin = users.save(new AppUser("admin@demo.rs", "Admin", passwordHasher.hash("password"), AccountType.ADMIN, UserRole.ADMIN));
-            AppUser ana = users.save(new AppUser("ana@demo.rs", "Ana Markovic", passwordHasher.hash("password"), AccountType.PLAYER, UserRole.USER));
-            AppUser milos = users.save(new AppUser("milos@demo.rs", "Milos Petrovic", passwordHasher.hash("password"), AccountType.PLAYER, UserRole.USER));
-            AppUser club = users.save(new AppUser("club@demo.rs", "TK Centar", passwordHasher.hash("password"), AccountType.CLUB, UserRole.USER));
+            AppUser admin = users.save(new AppUser("admin@demo.rs", "Admin", passwordHasher.hash("password"),
+                AccountType.ADMIN, UserRole.ADMIN));
+            AppUser ana = users.save(new AppUser("ana@demo.rs", "Ana Markovic", passwordHasher.hash("password"),
+                AccountType.PLAYER, UserRole.USER));
+            AppUser milos = users.save(new AppUser("milos@demo.rs", "Milos Petrovic", passwordHasher.hash("password"),
+                AccountType.PLAYER, UserRole.USER));
+            AppUser club = users.save(new AppUser("club@demo.rs", "TK Centar", passwordHasher.hash("password"),
+                AccountType.CLUB, UserRole.USER));
             club.setCity("Beograd");
             club.setBio("Klub sa tri rekreativna terena i vecernjim terminima.");
             users.save(club);
@@ -48,15 +52,19 @@ public class DataSeeder {
             Court clay = courts.save(new Court("Teren 1", "Bulevar sporta 12", "Sljaka", club.getClubProfile()));
             Court hard = courts.save(new Court("Teren 2", "Bulevar sporta 12", "Beton", club.getClubProfile()));
 
-            GameMatch played = new GameMatch("Ana vs Milos", LocalDateTime.now().minusDays(2).withHour(18).withMinute(0), ana, milos, ana, clay);
+            GameMatch played = new GameMatch("Ana vs Milos",
+                LocalDateTime.now().minusDays(2).withHour(18).withMinute(0), ana, milos, ana, clay);
             played.setStatus(MatchStatus.PLAYED);
             played.setScore("6:4 6:3");
             played.setWinner(ana);
             matches.save(played);
 
-            matches.save(new GameMatch("Vecernji termin", LocalDateTime.now().plusDays(1).withHour(20).withMinute(0), ana, milos, club, hard));
-            reservations.save(new Reservation(clay, milos, LocalDateTime.now().plusHours(3), LocalDateTime.now().plusHours(4)));
-            tournaments.save(new Tournament("Letnji kup", "Beograd", 32, LocalDate.now().plusWeeks(2), LocalDate.now().plusWeeks(2).plusDays(2), club));
+            matches.save(new GameMatch("Vecernji termin",
+                LocalDateTime.now().plusDays(1).withHour(20).withMinute(0), ana, milos, club, hard));
+            reservations.save(new Reservation(clay, milos, LocalDateTime.now().plusHours(3),
+                LocalDateTime.now().plusHours(4)));
+            tournaments.save(new Tournament("Letnji kup", "Beograd", 32, LocalDate.now().plusWeeks(2),
+                LocalDate.now().plusWeeks(2).plusDays(2), club));
             favorites.save(new Favorite(ana, club, FavoriteType.CLUB));
             notifications.save(new Notification(ana, "Milos je potvrdio rezultat meca."));
             notifications.save(new Notification(admin, "Demo podaci su ucitani."));

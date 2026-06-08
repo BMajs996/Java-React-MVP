@@ -100,6 +100,38 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void validationErrorsReturnStructuredJsonResponse() throws Exception {
+        String token = login("club@demo.rs", "password");
+
+        TestResponse invalid = send("POST", "/api/courts", json(
+            "name", "",
+            "location", "",
+            "surface", ""
+        ), Map.of("X-Auth-Token", token));
+
+        assertEquals(400, invalid.statusCode());
+        assertTrue(invalid.body().contains("\"status\":400"));
+        assertTrue(invalid.body().contains("\"error\":\"Bad Request\""));
+        assertTrue(invalid.body().contains("\"message\":\"Validation failed\""));
+        assertTrue(invalid.body().contains("\"path\":\"/api/courts\""));
+        assertTrue(invalid.body().contains("\"field\":\"name\""));
+        assertTrue(invalid.body().contains("\"field\":\"location\""));
+        assertTrue(invalid.body().contains("\"field\":\"surface\""));
+        assertTrue(invalid.body().contains("\"fieldErrors\""));
+    }
+
+    @Test
+    void responseStatusExceptionsReturnStructuredJsonResponse() throws Exception {
+        TestResponse unsupported = send("GET", "/api/export/unknown.csv", null, Map.of());
+
+        assertEquals(404, unsupported.statusCode());
+        assertTrue(unsupported.body().contains("\"status\":404"));
+        assertTrue(unsupported.body().contains("\"error\":\"Not Found\""));
+        assertTrue(unsupported.body().contains("\"message\":\"Unsupported export dataset: unknown\""));
+        assertTrue(unsupported.body().contains("\"path\":\"/api/export/unknown.csv\""));
+    }
+
+    @Test
     void adminProfileUpdateDoesNotCreatePublicProfileFields() throws Exception {
         String token = login("admin@demo.rs", "password");
 
@@ -271,8 +303,10 @@ class ApiIntegrationTest {
         TestResponse notifications = send("GET", "/api/profile/notifications", null, Map.of("X-Auth-Token", recipientToken));
         long notificationId = firstId(notifications.body());
 
-        TestResponse marked = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "", Map.of("X-Auth-Token", recipientToken));
-        TestResponse forbidden = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "", Map.of("X-Auth-Token", organizerToken));
+        TestResponse marked = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "",
+            Map.of("X-Auth-Token", recipientToken));
+        TestResponse forbidden = send("PATCH", "/api/profile/notifications/" + notificationId + "/read", "",
+            Map.of("X-Auth-Token", organizerToken));
 
         assertEquals(201, created.statusCode());
         assertEquals(200, notifications.statusCode());

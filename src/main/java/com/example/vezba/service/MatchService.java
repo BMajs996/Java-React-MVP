@@ -34,9 +34,11 @@ public class MatchService {
     public List<GameMatch> list(String filter, LocalDate date) {
         LocalDate target = date == null ? LocalDate.now() : date;
         return switch (filter) {
-            case "previous" -> matches.findByStartTimeBetweenOrderByStartTimeAsc(LocalDate.now().minusYears(10).atStartOfDay(), LocalDate.now().atStartOfDay());
+            case "previous" -> matches.findByStartTimeBetweenOrderByStartTimeAsc(
+                LocalDate.now().minusYears(10).atStartOfDay(), LocalDate.now().atStartOfDay());
             case "today" -> matches.findByStartTimeBetweenOrderByStartTimeAsc(target.atStartOfDay(), target.plusDays(1).atStartOfDay());
-            case "upcoming" -> matches.findByStartTimeBetweenOrderByStartTimeAsc(LocalDate.now().plusDays(1).atStartOfDay(), LocalDate.now().plusYears(10).atStartOfDay());
+            case "upcoming" -> matches.findByStartTimeBetweenOrderByStartTimeAsc(
+                LocalDate.now().plusDays(1).atStartOfDay(), LocalDate.now().plusYears(10).atStartOfDay());
             default -> matches.findAll();
         };
     }

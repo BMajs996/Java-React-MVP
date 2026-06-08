@@ -22,9 +22,11 @@ public class PdfExportService {
         List<byte[]> objects = List.of(
             bytes("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"),
             bytes("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"),
-            bytes("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n"),
+            bytes("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
+                + "/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n"),
             bytes("4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"),
-            bytes("5 0 obj\n<< /Length " + content.length + " >>\nstream\n" + new String(content, StandardCharsets.UTF_8) + "\nendstream\nendobj\n")
+            bytes("5 0 obj\n<< /Length " + content.length + " >>\nstream\n"
+                + new String(content, StandardCharsets.UTF_8) + "\nendstream\nendobj\n")
         );
 
         StringBuilder pdf = new StringBuilder("%PDF-1.4\n");
